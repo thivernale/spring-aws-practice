@@ -3,10 +3,7 @@ package org.thivernale.springawspractice.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.thivernale.springawspractice.domain.Order;
 import org.thivernale.springawspractice.service.OrderService;
 
@@ -21,5 +18,10 @@ public class OrderController {
         orderService.createOrder(order);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(order.getOrderId());
+    }
+
+    @GetMapping("{orderId}")
+    public ResponseEntity<Order> getOrder(@PathVariable("orderId") String orderId) {
+        return ResponseEntity.ok(orderService.findOrder(orderId));
     }
 }
