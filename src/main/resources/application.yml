@@ -1,3 +1,13 @@
 spring:
   application:
     name: spring-aws-practice
+  cloud:
+    aws:
+      credentials:
+        access-key: test
+        secret-key: test
+        profile:
+          name: localstack
+      endpoint: http://localhost:4566
+      region:
+        static: eu-central-1
