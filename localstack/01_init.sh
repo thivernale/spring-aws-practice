@@ -2,29 +2,31 @@
 
 set -e
 
-aws s3 mb s3://test-bucket --profile localstack
+export AWS_DEFAULT_REGION=eu-central-1
+
+awslocal s3 mb s3://test-bucket
 echo "========= List of buckets ============"
-aws s3 ls --profile localstack
+awslocal s3 ls
 
-aws sqs create-queue --queue-name testQueue --profile localstack
+awslocal sqs create-queue --queue-name testQueue
 echo "========= List of SQS Queues ============"
-aws sqs list-queues --profile localstack
+awslocal sqs list-queues
 
-aws sns create-topic --name testTopic --profile localstack
+awslocal sns create-topic --name testTopic
 echo "========= List of SNS Topics ============"
-aws sns list-topics --profile localstack
+awslocal sns list-topics
 
-aws secretsmanager create-secret --name /spring/secret --secret-string '{"app.apiKey": "secret123455", "anotherSecret": "shhhh"}' --region eu-central-1 --profile localstack
-aws secretsmanager create-secret --name /secrets/api-secrets --secret-string '{"app.apiKey": "secret123456", "anotherSecret": "api-secrets"}' --region eu-central-1 --profile localstack
+awslocal secretsmanager create-secret --name /spring/secret --secret-string '{"app.apiKey": "secret123455", "anotherSecret": "shhhh"}'
+awslocal secretsmanager create-secret --name /secrets/api-secrets --secret-string '{"app.apiKey": "secret123456", "anotherSecret": "api-secrets"}'
 echo "========= List of secrets ============"
-aws secretsmanager list-secrets --profile localstack
+awslocal secretsmanager list-secrets
 
 # Create DynamoDB table
-aws dynamodb create-table \
+awslocal dynamodb create-table \
     --table-name order \
     --attribute-definitions AttributeName=orderId,AttributeType=S \
     --key-schema AttributeName=orderId,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --profile localstack
-aws dynamodb list-tables --profile localstack
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+awslocal dynamodb list-tables
 
 echo "LocalStack initialized successfully"
