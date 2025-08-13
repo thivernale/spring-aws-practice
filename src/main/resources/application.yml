@@ -11,3 +11,18 @@ spring:
       endpoint: http://localhost:4566
       region:
         static: eu-central-1
+      s3:
+        path-style-access-enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    env:
+      show-values: always
+    configprops:
+      show-values: always
+logging:
+  level:
+    io.awspring.cloud.dynamodb: debug
