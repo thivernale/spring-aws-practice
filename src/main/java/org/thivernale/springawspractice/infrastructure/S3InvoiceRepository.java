@@ -1,10 +1,11 @@
 package org.thivernale.springawspractice.infrastructure;
 
 import io.awspring.cloud.s3.S3Operations;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.thivernale.springawspractice.ApplicationProperties;
 import org.thivernale.springawspractice.domain.Invoice;
 import org.thivernale.springawspractice.domain.InvoiceRepository;
 
@@ -16,9 +17,19 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class S3InvoiceRepository implements InvoiceRepository {
     private final S3Operations s3Operations;
+    private final ApplicationProperties applicationProperties;
 
-    @Value("${app.bucketName:test-bucket}")
     private String bucketName;
+
+    @PostConstruct
+    public void init() {
+        this.bucketName = applicationProperties.getBucketName();
+    }
+
+    /*@EventListener
+    public void init(ContextRefreshedEvent event) {
+        this.bucketName = applicationProperties.getBucketName();
+    }*/
 
     @Override
     public void store(Invoice invoice) {
