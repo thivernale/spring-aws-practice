@@ -29,6 +29,7 @@ class SpringAwsPracticeApplicationTests {
 
     @Test
     void contextLoads() {
+
         Order order = new Order("orderId", "productName", "userId", BigDecimal.valueOf(100L));
         orderService.createOrder(order);
 
