@@ -3,16 +3,18 @@ spring:
     name: spring-aws-practice
   cloud:
     aws:
-      credentials:
-        access-key: test
-        secret-key: test
-        profile:
-          name: localstack
+      #      credentials:
+      #        access-key: test
+      #        secret-key: test
+      profile:
+        name: localstack
       endpoint: http://localhost:4566
       region:
         static: eu-central-1
       s3:
         path-style-access-enabled: true
+      sqs:
+        queue-not-found-strategy: fail
 management:
   endpoints:
     web:

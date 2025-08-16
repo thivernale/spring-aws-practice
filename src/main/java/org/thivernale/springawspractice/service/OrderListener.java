@@ -1,13 +1,20 @@
 package org.thivernale.springawspractice.service;
 
+import io.awspring.cloud.sns.sms.SnsSmsOperations;
 import io.awspring.cloud.sqs.annotation.SqsListener;
+import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
+import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.thivernale.springawspractice.domain.*;
+import org.thivernale.springawspractice.domain.InvoiceFactory;
+import org.thivernale.springawspractice.domain.InvoiceRepository;
+import org.thivernale.springawspractice.domain.OrderCreated;
+import org.thivernale.springawspractice.domain.OrderRepository;
 
-import java.util.Optional;
+import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -17,20 +24,50 @@ public class OrderListener {
     private final OrderRepository orderRepository;
     private final InvoiceRepository invoiceRepository;
     private final InvoiceFactory invoiceFactory;
+    private final SnsSmsOperations smsOperations;
 
     @SqsListener(
         queueNames = "#{@orderService.getQueueName()}",
-        //acknowledgementMode = SqsListenerAcknowledgementMode.MANUAL,
-        messageVisibilitySeconds = "200",
+        acknowledgementMode = SqsListenerAcknowledgementMode.MANUAL,
+        messageVisibilitySeconds = "20",
         maxMessagesPerPoll = "10",
-        maxConcurrentMessages = "20"
+        maxConcurrentMessages = "20",
+        id = "order-created-listener"
     )
-    void handle(OrderCreated event/*, Acknowledgement acknowledgement*/) {
+    void handleAsync(OrderCreated event, Acknowledgement acknowledgement) {
         LOGGER.info("Received event: {}", event);
-        Optional<Order> orderOptional = orderRepository.findById(event.orderId());
-        orderOptional.ifPresent(order -> {
-            invoiceRepository.store(invoiceFactory.invoiceFor(order));
-            //acknowledgement.acknowledge();
-        });
+
+        CompletableFuture.supplyAsync(() -> orderRepository.findById(event.orderId()))
+            .thenApply(orderOptional -> {
+                orderOptional.ifPresentOrElse(
+                    order -> invoiceRepository.store(invoiceFactory.invoiceFor(order)),
+                    () -> {
+                        throw new RuntimeException("Order not found: {}".formatted(event.orderId()));
+                    });
+                return orderOptional;
+            })
+            .thenCompose(orderOptional -> {
+                if (orderOptional.isPresent()) {
+                    return acknowledgement.acknowledgeAsync();
+                }
+                return null;
+            });
+
+    }
+
+    void handle(OrderCreated event) {
+        LOGGER.info("Received event: {}", event);
+
+        orderRepository.findById(event.orderId())
+            .ifPresent(order -> {
+                if ("throw".equals(order.getProductName())) {
+                    order.setProductName("product");
+                    orderRepository.save(order);
+                    throw new RuntimeException("Invalid product name changed to: %s".formatted(order.getProductName()));
+                }
+                invoiceRepository.store(invoiceFactory.invoiceFor(order));
+                URL signedUrl = invoiceRepository.findGetUrlByOrderId(order.getOrderId());
+//            smsOperations.send("+00000", "Invoice created: %s".formatted(signedUrl));
+            });
     }
 }

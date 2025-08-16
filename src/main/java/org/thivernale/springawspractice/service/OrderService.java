@@ -4,7 +4,6 @@ import io.awspring.cloud.sqs.operations.SqsTemplate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.logging.LoggersEndpoint;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.thivernale.springawspractice.ApplicationProperties;
@@ -24,12 +23,16 @@ public class OrderService {
     private final InvoiceRepository invoiceRepository;
     private final SqsTemplate sqsTemplate;
     private final ApplicationProperties applicationProperties;
-    private final LoggersEndpoint loggersEndpoint;
 
     public void createOrder(Order order) {
         orderRepository.save(order);
         // publish OrderCreated to "order-queue" queue in SQS
-        sqsTemplate.send(getQueueName(), new OrderCreated(order.getOrderId()));
+        OrderCreated orderCreated = new OrderCreated(order.getOrderId());
+//        sqsTemplate.send(getQueueName(), orderCreated);
+        sqsTemplate.send(to -> to.queue(getQueueName())
+                .payload(orderCreated)
+//            .headers()
+        );
         LOGGER.info("Created order: {}", order.getOrderId());
     }
 
