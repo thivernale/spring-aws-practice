@@ -1,0 +1,23 @@
+### Spring Cloud AWS + Localstack
+@orderId = 1234
+GET http://localhost:8080/api/orders/{{orderId}}
+
+### Create order
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "orderId": {{orderId}},
+  "amount": 10.0,
+  "productName": "item",
+  "userId": "111"
+}
+
+### Download invoice PDF
+GET http://localhost:8080/api/orders/{{orderId}}/invoice
+
+### Get invoice URL (redirect to bucket)
+GET http://localhost:8080/api/orders/{{orderId}}/invoice-redirect
+
+### Send notification
+POST http://localhost:8080/api/orders/{{orderId}}/notify

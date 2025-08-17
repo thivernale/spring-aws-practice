@@ -1,6 +1,7 @@
 package org.thivernale.springawspractice.service;
 
 import io.awspring.cloud.sns.sms.SnsSmsOperations;
+import io.awspring.cloud.sqs.annotation.SnsNotificationMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
@@ -35,14 +36,14 @@ public class OrderListener {
         id = "order-created-listener"
     )
     void handleAsync(OrderCreated event, Acknowledgement acknowledgement) {
-        LOGGER.info("Received event: {}", event);
+        LOGGER.info("Received event from SQS: {}", event);
 
         CompletableFuture.supplyAsync(() -> orderRepository.findById(event.orderId()))
             .thenApply(orderOptional -> {
                 orderOptional.ifPresentOrElse(
                     order -> invoiceRepository.store(invoiceFactory.invoiceFor(order)),
                     () -> {
-                        throw new RuntimeException("Order not found: {}".formatted(event.orderId()));
+                        throw new RuntimeException("Order not found: %s".formatted(event.orderId()));
                     });
                 return orderOptional;
             })
@@ -55,16 +56,23 @@ public class OrderListener {
 
     }
 
-    void handle(OrderCreated event) {
-        LOGGER.info("Received event: {}", event);
+    @SqsListener(
+        queueNames = "#{@orderService.getTopicQueueName()}",
+        messageVisibilitySeconds = "20",
+        maxMessagesPerPoll = "10",
+        maxConcurrentMessages = "20",
+        id = "order-created-topic-listener"
+    )
+    void handle(@SnsNotificationMessage OrderCreated event) {
+        LOGGER.info("Received event from SNS: {}", event);
 
         orderRepository.findById(event.orderId())
             .ifPresent(order -> {
-                if ("throw".equals(order.getProductName())) {
+                /*if ("throw".equals(order.getProductName())) {
                     order.setProductName("product");
                     orderRepository.save(order);
                     throw new RuntimeException("Invalid product name changed to: %s".formatted(order.getProductName()));
-                }
+                }*/
                 invoiceRepository.store(invoiceFactory.invoiceFor(order));
                 URL signedUrl = invoiceRepository.findGetUrlByOrderId(order.getOrderId());
 //            smsOperations.send("+00000", "Invoice created: %s".formatted(signedUrl));

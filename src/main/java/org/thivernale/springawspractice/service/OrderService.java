@@ -1,5 +1,7 @@
 package org.thivernale.springawspractice.service;
 
+import io.awspring.cloud.sns.core.SnsNotification;
+import io.awspring.cloud.sns.core.SnsOperations;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final InvoiceRepository invoiceRepository;
     private final SqsTemplate sqsTemplate;
+    private final SnsOperations snsOperations;
     private final ApplicationProperties applicationProperties;
 
     public void createOrder(Order order) {
@@ -33,11 +36,20 @@ public class OrderService {
                 .payload(orderCreated)
 //            .headers()
         );
+        sendNotification(orderCreated);
         LOGGER.info("Created order: {}", order.getOrderId());
+    }
+
+    public void sendNotification(OrderCreated orderCreated) {
+        snsOperations.sendNotification(applicationProperties.getTopicName(), SnsNotification.of(orderCreated));
     }
 
     public String getQueueName() {
         return applicationProperties.getQueueName();
+    }
+
+    public String getTopicQueueName() {
+        return applicationProperties.getTopicQueueName();
     }
 
     public Order findOrder(String orderId) {

@@ -6,9 +6,7 @@ spring:
       #      credentials:
       #        access-key: test
       #        secret-key: test
-      profile:
-        name: localstack
-      endpoint: http://localhost:4566
+      #      endpoint: http://localhost:4566
       region:
         static: eu-central-1
       s3:
@@ -31,4 +29,5 @@ logging:
 app:
   bucket-name: test-bucket
   queue-name: testQueue
+  topic-queue-name: topicQueue
   topic-name: testTopic

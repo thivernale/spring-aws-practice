@@ -8,5 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ApplicationProperties {
     private final String bucketName;
     private final String queueName;
+    private final String topicQueueName;
     private final String topicName;
 }

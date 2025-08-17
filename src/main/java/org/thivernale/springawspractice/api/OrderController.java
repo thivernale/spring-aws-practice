@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import org.thivernale.springawspractice.domain.Order;
+import org.thivernale.springawspractice.domain.OrderCreated;
 import org.thivernale.springawspractice.service.OrderService;
 
 @RestController
@@ -26,16 +27,27 @@ public class OrderController {
         return ResponseEntity.ok(orderService.findOrder(orderId));
     }
 
+    @PostMapping("{orderId}/notify")
+    public ResponseEntity<Void> sendNotification(@PathVariable("orderId") String orderId) {
+        orderService.sendNotification(new OrderCreated(orderId + " notify"));
+        return ResponseEntity.noContent()
+            .build();
+    }
+
     @GetMapping("{orderId}/invoice")
     public ResponseEntity<Resource> invoice(@PathVariable("orderId") String orderId) {
         Resource resource = orderService.getInvoice(orderId);
-        return ResponseEntity.status(HttpStatus.OK)
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                .filename(resource.getFilename())
-                .build()
-                .toString())
-            .body(resource);
+        if (resource.exists()) {
+            return ResponseEntity.status(HttpStatus.OK)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                    .filename(resource.getFilename())
+                    .build()
+                    .toString())
+                .body(resource);
+        }
+        return ResponseEntity.notFound()
+            .build();
     }
 
     @GetMapping("{orderId}/invoice-redirect")
